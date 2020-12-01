@@ -1,0 +1,17 @@
+name: "Linux kernel ION UAPI header file."
+description:
+    "ION UAPI header file, required to use ioctls on /dev/ion devices."
+
+third_party {
+  url {
+    type: HOMEPAGE
+    value: "https://www.kernel.org/"
+  }
+  url {
+    type: GIT
+    value: "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tag/?h=v5.9"
+  }
+  version: "5.9"
+  last_upgrade_date { year: 2020 month: 11 day: 24 }
+  license_type: RESTRICTED
+}

@@ -1,0 +1,43 @@
+From 55db2fd6cba675bcdd7931ed718f9b744db262f7 Mon Sep 17 00:00:00 2001
+From: Salman Qazi <sqazi@google.com>
+Date: Tue, 31 Mar 2020 14:28:53 -0700
+Subject: [PATCH 2/3] TEST-ONLY: Make sure that pagemap doesn't skip VM_PFNMAP
+ VMAs.
+
+This makes /proc/<pid>/pagemap work with ION memory, which
+is mapped as VM_PFNMAP
+
+Change-Id: Ic5791d0be3f3906bf1d774be16b1ba0153ee2d9b
+---
+ fs/proc/task_mmu.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
+index 21fbc8bbd3cf3..b45b7ba8b95f5 100644
+--- a/fs/proc/task_mmu.c
++++ b/fs/proc/task_mmu.c
+@@ -1675,6 +1675,13 @@ static int pagemap_hugetlb_range(pte_t *ptep, unsigned long hmask,
+ }
+ #endif /* HUGETLB_PAGE */
+ 
++/* Don't skip any VMAs */
++static int pagemap_test_walk(unsigned long start, unsigned long end,
++			      struct mm_walk *walk)
++{
++	return 0;
++}
++
+ /*
+  * /proc/pid/pagemap - an array mapping virtual pages to pfns
+  *
+@@ -1736,6 +1743,7 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+ 
+ 	pagemap_walk.pmd_entry = pagemap_pmd_range;
+ 	pagemap_walk.pte_hole = pagemap_pte_hole;
++	pagemap_walk.test_walk = pagemap_test_walk;
+ #ifdef CONFIG_HUGETLB_PAGE
+ 	pagemap_walk.hugetlb_entry = pagemap_hugetlb_range;
+ #endif
+-- 
+2.29.2.299.gdc1121823c-goog
+

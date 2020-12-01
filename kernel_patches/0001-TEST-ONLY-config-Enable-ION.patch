@@ -1,0 +1,125 @@
+From 2e102341a6272c127f09719692f91fa63f063dd2 Mon Sep 17 00:00:00 2001
+From: Salman Qazi <sqazi@google.com>
+Date: Mon, 16 Nov 2020 11:34:36 -0800
+Subject: [PATCH 1/3]     TEST-ONLY: config: Enable ION
+
+    Also, add helpful ion kernel debug prints.
+
+    cat <<EOF | tee -a \
+       chromeos/config/base.config
+    CONFIG_ION=y
+    CONFIG_ION_SYSTEM_HEAP=y
+    CONFIG_ION_CARVEOUT_HEAP=y
+    CONFIG_ION_CHUNK_HEAP=y
+    CONFIG_CMA=y
+    CONFIG_DMA_CMA=y
+    CONFIG_ION_CMA_HEAP=y
+    EOF
+
+    ./chromeos/scripts/kernelconfig olddefconfig
+
+    Change-Id: Ifa4ea2c9e72869857cf1336746326672f25b5db2
+
+Change-Id: Ibe5f00b773df89eef6c9cb11d92224d0f7a8bcfd
+---
+ chromeos/config/base.config                | 7 +++++++
+ drivers/staging/android/ion/ion.c          | 5 +++++
+ drivers/staging/android/ion/ion_cma_heap.c | 5 +++++
+ 3 files changed, 17 insertions(+)
+
+diff --git a/chromeos/config/base.config b/chromeos/config/base.config
+index 5878eda5c6d66..0bede2b0ffb54 100644
+--- a/chromeos/config/base.config
++++ b/chromeos/config/base.config
+@@ -44,6 +44,7 @@ CONFIG_CGROUP_DEVICE=y
+ CONFIG_CGROUP_FREEZER=y
+ CONFIG_CHROME_PLATFORMS=y
+ CONFIG_CLS_U32_MARK=y
++CONFIG_CMA=y
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_CONFIGFS_FS=y
+ CONFIG_CONNECTOR=y
+@@ -72,6 +73,7 @@ CONFIG_DEFAULT_HOSTNAME="localhost"
+ CONFIG_DEFAULT_MMAP_MIN_ADDR=32768
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_DMA_CMA=y
+ CONFIG_DM_CRYPT=y
+ CONFIG_DM_FLAKEY=m
+ CONFIG_DM_THIN_PROVISIONING=y
+@@ -158,6 +160,11 @@ CONFIG_INPUT_MISC=y
+ CONFIG_INPUT_TABLET=y
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_INPUT_UINPUT=m
++CONFIG_ION=y
++CONFIG_ION_CARVEOUT_HEAP=y
++CONFIG_ION_CHUNK_HEAP=y
++CONFIG_ION_CMA_HEAP=y
++CONFIG_ION_SYSTEM_HEAP=y
+ CONFIG_IOSCHED_BFQ=y
+ CONFIG_IP6_NF_FILTER=y
+ CONFIG_IP6_NF_IPTABLES=y
+diff --git a/drivers/staging/android/ion/ion.c b/drivers/staging/android/ion/ion.c
+index 45c7f829e3872..748eabed82aee 100644
+--- a/drivers/staging/android/ion/ion.c
++++ b/drivers/staging/android/ion/ion.c
+@@ -403,9 +403,12 @@ int ion_alloc(size_t len, unsigned int heap_id_mask, unsigned int flags)
+ 
+ 	down_read(&dev->lock);
+ 	plist_for_each_entry(heap, &dev->heaps, node) {
++		pr_info("ion HEAP: id:%d type:%d (mask: %08x)\n",
++			heap->id, heap->type, heap_id_mask);
+ 		/* if the caller didn't specify this heap id */
+ 		if (!((1 << heap->id) & heap_id_mask))
+ 			continue;
++		pr_info("creating...\n");
+ 		buffer = ion_buffer_create(heap, dev, len, flags);
+ 		if (!IS_ERR(buffer))
+ 			break;
+@@ -563,6 +566,8 @@ void ion_device_add_heap(struct ion_heap *heap)
+ 				    heap, &debug_shrink_fops);
+ 	}
+ 
++	pr_info("ion HEAP: id:%d type:%d\n", heap->id, heap->type);
++
+ 	dev->heap_cnt++;
+ 	up_write(&dev->lock);
+ }
+diff --git a/drivers/staging/android/ion/ion_cma_heap.c b/drivers/staging/android/ion/ion_cma_heap.c
+index 3fafd013d80ab..285dfc3f93146 100644
+--- a/drivers/staging/android/ion/ion_cma_heap.c
++++ b/drivers/staging/android/ion/ion_cma_heap.c
+@@ -39,6 +39,8 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
+ 	if (align > CONFIG_CMA_ALIGNMENT)
+ 		align = CONFIG_CMA_ALIGNMENT;
+ 
++	pr_info("%s\n", __func__);
++
+ 	pages = cma_alloc(cma_heap->cma, nr_pages, align, false);
+ 	if (!pages)
+ 		return -ENOMEM;
+@@ -124,18 +126,21 @@ static int __ion_add_cma_heaps(struct cma *cma, void *data)
+ {
+ 	struct ion_heap *heap;
+ 
++	pr_info("%s\n", __func__);
+ 	heap = __ion_cma_heap_create(cma);
+ 	if (IS_ERR(heap))
+ 		return PTR_ERR(heap);
+ 
+ 	heap->name = cma_get_name(cma);
+ 
++	pr_info("%s %s\n", __func__, heap->name);
+ 	ion_device_add_heap(heap);
+ 	return 0;
+ }
+ 
+ static int ion_add_cma_heaps(void)
+ {
++	pr_info("%s\n", __func__);
+ 	cma_for_each_area(__ion_add_cma_heaps, NULL);
+ 	return 0;
+ }
+-- 
+2.29.2.299.gdc1121823c-goog
+
