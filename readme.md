@@ -9,7 +9,7 @@ The goal behind this project is to provide a platform to share our findings with
 
 The [Wikipedia article](https://en.wikipedia.org/wiki/Row_hammer) for Row Hammer is a good starting point.  To summarize: DRAM is composed of banks, which are themselves composed of rows.  When a row is repeatedly accessed, bits located in its neighbouring rows may change their values. As you can imagine, the ability to flip bits that you don't have direct access to has potential security implications.  Row hammer exploitation has already been [demonstrated](https://github.com/IAIK/rowhammerjs) from Javascript.   Since the initial discovery of row hammer, the DRAM vendors have made some efforts to mitigate row hammer.  These efforts have proven unsuccessful, as demonstrated by the TRResspass work.  The result is that bits can still be flipped via Row Hammer, but more sophisticated access patterns are required.  As the DRAM moves to smaller and smaller process nodes, the underlying Row Hammer phenomenon becomes worse, and the mitigation trade offs become harder.  This is a very pressing issue for computer security, going forward.
 
-In early 2020, the [TRRespass](https://www.vusec.net/projects/trrespass/) work was contributed by the VuSec group.  This once again highlighted that Row Hammer is not fixed.  This present work is greatly inspired by the TRRespass work.
+In early 2020, the [TRRespass](https://www.vusec.net/projects/trrespass/) work was produced as a result of a large collaboration between VU, Qualcomm and ETH Zurich.  This once again highlighted that Row Hammer is not fixed.  This present work is greatly inspired by the TRRespass work.
 
 ## Compiling
 
